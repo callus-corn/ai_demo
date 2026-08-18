@@ -3,12 +3,11 @@ import numpy as np
 # -----------------------------
 # 活性化関数
 # -----------------------------
-def sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))
+def relu(x):
+    return np.maximum(0, x)
 
-def sigmoid_derivative(y):
-    # y: sigmoid(x)
-    return y * (1.0 - y)
+def relu_derivative(x):
+    return np.where(x >= 0, 1, 0)
 
 def softmax(x):
     x = x - np.max(x, axis=1, keepdims=True)
@@ -31,7 +30,7 @@ class NeuralNetwork:
     def forward(self, X):
         # 隠れ層
         self.z1 = X @ self.W1 + self.b1
-        self.a1 = sigmoid(self.z1)
+        self.a1 = relu(self.z1)
 
         # 出力層
         self.z2 = self.a1 @ self.W2 + self.b2
@@ -54,7 +53,7 @@ class NeuralNetwork:
 
         # 隠れ層
         da1 = dz2 @ self.W2.T
-        dz1 = da1 * sigmoid_derivative(self.a1)
+        dz1 = da1 * relu_derivative(self.a1)
 
         dW1 = X.T @ dz1
         db1 = np.sum(dz1, axis=0, keepdims=True)
@@ -95,21 +94,16 @@ Y = np.eye(10)[labels]
 # 学習
 # -----------------------------
 net = NeuralNetwork()
-epochs = 1000
+epochs = 501
+print("Epoch,Loss")
 for epoch in range(epochs):
     y_pred = net.forward(X)
     loss = net.loss(Y)
     net.backward(X, Y, lr=0.1)
 
-    if epoch % 100 == 0:
-        pred = np.argmax(y_pred, axis=1)
-        acc = np.mean(pred == labels)
-
-        print(
-            f"Epoch {epoch:4d} "
-            f"Loss={loss:.4f} "
-            f"Accuracy={acc:.4f}"
-        )
+    pred = np.argmax(y_pred, axis=1)
+    acc = np.mean(pred == labels)
+    print(f"{epoch},{loss:.4f}")
 
 # -----------------------------
 # 推論
@@ -120,5 +114,5 @@ for i in range(10):
     prob = net.forward(sample)
 
     print("入力:", sample)
-    print("予測確率:", prob)
-    print("予測クラス:", np.argmax(prob))
+    print("予測確率:", np.round(prob, 2))
+    print("予測結果:", np.argmax(prob))
